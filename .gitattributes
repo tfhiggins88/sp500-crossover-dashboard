@@ -1,0 +1,6 @@
+# Keep line endings LF in the repo so the GitHub Actions runner (Linux) and the
+# embedded shell scripts in the workflow behave predictably.
+* text=auto eol=lf
+*.py text eol=lf
+*.yml text eol=lf
+*.md text eol=lf

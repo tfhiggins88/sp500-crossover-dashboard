@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+
+# Local S&P 500 list cache - regenerated (and re-cached) on every run,
+# so there's no reason to track it in git.
+sp500_cache.json
+
+# OS noise
+.DS_Store
+Thumbs.db
