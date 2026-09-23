@@ -20,8 +20,8 @@ Big picture, top to bottom:
   3. For each ticker, compute the 5-day and 20-day SMA of the closing price.
 
   4. Detect whether SMA5 crossed *above* (bullish) or *below* (bearish) SMA20
-     during the last 5 trading days. A "crossover" is simply a sign change in
-     (SMA5 - SMA20) from one day to the next.
+     during the last LOOKBACK_DAYS trading days. A "crossover" is simply a
+     sign change in (SMA5 - SMA20) from one day to the next.
 
   5. For every ticker that had a crossover, draw an interactive Plotly chart of
      the last 30 trading days (close, SMA5, SMA20, and a marker on the exact
@@ -62,7 +62,7 @@ TICKER_OVERRIDE: list[str] = []
 # --- Moving-average settings ---------------------------------------------
 SHORT_WINDOW = 5     # "fast" SMA, in trading days
 LONG_WINDOW = 20     # "slow" SMA, in trading days
-LOOKBACK_DAYS = 5    # how many recent trading days to search for a crossover
+LOOKBACK_DAYS = 2    # how many recent trading days to search for a crossover
 CHART_DAYS = 30      # how many trading days to show on each chart
 
 # --- Download settings ---------------------------------------------------

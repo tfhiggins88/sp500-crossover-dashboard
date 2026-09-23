@@ -7,7 +7,7 @@ web page.
 - **Bullish crossover** – the fast average (SMA5) crosses *above* the slow one (SMA20).
 - **Bearish crossover** – the fast average crosses *below* the slow one.
 
-It looks at the **last 5 trading days**, charts every ticker that crossed, and
+It looks at the **last 2 trading days**, charts every ticker that crossed, and
 bundles all the charts into a single self-contained `docs/index.html`. A GitHub
 Actions workflow regenerates and republishes it every morning at ~7:00 AM
 Eastern.
@@ -45,7 +45,7 @@ Eastern.
 3. **`find_crossovers()`**
    For each ticker: compute `SMA5` and `SMA20` of the close, take the
    *spread* `SMA5 − SMA20`, and look for a **sign change** from one day to the
-   next within the last 5 trading days. Each event is recorded with its date
+   next within the last 2 trading days. Each event is recorded with its date
    and direction.
 
 4. **`make_chart()`**
@@ -71,7 +71,7 @@ Eastern.
 |---------|---------|---------|
 | `TICKER_OVERRIDE` | `[]` | Non-empty = scan *this* list instead of the S&P 500. Great for testing: `["AAPL", "MSFT", "NVDA"]`. |
 | `SHORT_WINDOW` / `LONG_WINDOW` | `5` / `20` | The two SMA lengths. |
-| `LOOKBACK_DAYS` | `5` | How many recent trading days to search for a crossover. |
+| `LOOKBACK_DAYS` | `2` | How many recent trading days to search for a crossover. |
 | `CHART_DAYS` | `30` | Trading days shown per chart. |
 | `BATCH_SIZE` | `50` | Tickers per download call. |
 | `MAX_RETRIES` | `2` | Extra fetch attempts for failed tickers. |
