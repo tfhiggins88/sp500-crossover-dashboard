@@ -3,18 +3,19 @@ name: Daily SMA Crossover Dashboard
 # ---------------------------------------------------------------------------
 # When does this run?
 #
-# GitHub Actions cron is ALWAYS in UTC. We want ~7:00 AM US Eastern:
-#   - during EDT (mid-Mar to early-Nov):  7 AM ET = 11:00 UTC
-#   - during EST (early-Nov to mid-Mar):  7 AM ET = 12:00 UTC
-#
-# So we schedule BOTH 11:00 and 12:00 UTC, and the first step in the job
-# checks the real Eastern-time hour and bails out of the "wrong" one. That
-# way it fires once per day at 7 AM Eastern year-round, no manual DST edits.
+# GitHub Actions cron is ALWAYS in UTC, and GitHub does not guarantee it
+# fires at the exact minute -- scheduled runs can be queued and delayed,
+# sometimes by a while, during busy periods. So rather than try to detect
+# "is it exactly 7 AM Eastern right now?" at execution time (which broke:
+# a delayed run just looks like the wrong hour and skips itself forever),
+# we use a single fixed UTC cron and accept the small seasonal drift:
+#   - 11:00 UTC = 7:00 AM Eastern while EDT is in effect (mid-Mar to early-Nov)
+#   - 11:00 UTC = 6:00 AM Eastern while EST is in effect (early-Nov to mid-Mar)
+# Either way it lands comfortably before your morning check.
 # ---------------------------------------------------------------------------
 on:
   schedule:
-    - cron: "0 11 * * *"   # 7 AM Eastern while EDT is in effect
-    - cron: "0 12 * * *"   # 7 AM Eastern while EST is in effect
+    - cron: "0 11 * * *"
   workflow_dispatch: {}    # lets you run it on demand from the Actions tab
 
 # The workflow needs to push the regenerated docs/index.html back to the repo.
@@ -34,37 +35,21 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      # Skip the scheduled run that isn't actually 7 AM Eastern right now.
-      # Manual (workflow_dispatch) runs always proceed.
-      - name: Skip the duplicate scheduled run
-        if: github.event_name == 'schedule'
-        run: |
-          HOUR=$(TZ="America/New_York" date +%H)
-          echo "Current time in America/New_York is hour $HOUR"
-          if [ "$HOUR" != "07" ]; then
-            echo "Not 7 AM Eastern -> skipping the rest of this run."
-            echo "SKIP=true" >> "$GITHUB_ENV"
-          fi
-
       - name: Set up Python
-        if: env.SKIP != 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
 
       - name: Install dependencies
-        if: env.SKIP != 'true'
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Run the crossover scan
-        if: env.SKIP != 'true'
         run: python crossover.py
 
       - name: Commit and push the updated dashboard
-        if: env.SKIP != 'true'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

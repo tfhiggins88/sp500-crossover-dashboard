@@ -165,12 +165,20 @@ Refresh the Pages URL to see it.
 
 ## Schedule details
 
-`daily-crossover.yml` has two cron entries – `11:00 UTC` and `12:00 UTC` –
-because 7:00 AM US Eastern is 11:00 UTC during daylight saving and 12:00 UTC
-otherwise. The first job step reads the real `America/New_York` hour and exits
-early on whichever run *isn't* 7 AM there, so it effectively fires **once a day
-at 7 AM Eastern, all year**, with no seasonal edits. Manual runs
-(`workflow_dispatch`) always execute.
+`daily-crossover.yml` fires on a single cron: `11:00 UTC`, every day. That's
+7:00 AM US Eastern while EDT is in effect (mid-Mar–early-Nov) and 6:00 AM
+Eastern during EST (early-Nov–mid-Mar) – either way, well before a normal
+morning check.
+
+An earlier version tried to be exact about this by scheduling both `11:00`
+and `12:00 UTC` and having the job check the real Eastern hour at *execution*
+time, skipping whichever run wasn't 7 AM. That backfired: GitHub Actions
+doesn't guarantee scheduled runs fire at the exact minute – they can be
+queued and delayed – so by the time a delayed run actually executed, the
+real-world hour was almost never `07`, and the job skipped itself on nearly
+every scheduled run. A single fixed-UTC cron with no self-skip logic is
+simpler and can't fail that way. Manual runs (`workflow_dispatch`) always
+execute in full.
 
 ---
 
