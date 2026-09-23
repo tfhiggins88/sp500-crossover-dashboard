@@ -1,6 +1,7 @@
 # Data + calculation
 yfinance>=0.2.50      # Yahoo Finance price downloads
 pandas>=2.0           # data frames, rolling averages
+numpy>=1.26            # used directly by backtest.py's return calculations
 lxml>=5.0             # lets pandas.read_html parse the Wikipedia S&P 500 table
 requests>=2.31        # fetch the Wikipedia page with a friendly User-Agent
 

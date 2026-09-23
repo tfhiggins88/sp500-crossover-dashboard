@@ -161,8 +161,14 @@ def get_sp500_tickers() -> list[str]:
 # STEP 2 -- download price history
 # ===========================================================================
 
-def download_prices(tickers: list[str]) -> tuple[dict[str, pd.DataFrame], list[str]]:
+def download_prices(
+    tickers: list[str], period: str = DOWNLOAD_PERIOD
+) -> tuple[dict[str, pd.DataFrame], list[str]]:
     """Download daily OHLC history for every ticker.
+
+    `period` defaults to DOWNLOAD_PERIOD (enough for the dashboard's SMAs),
+    but callers that need more history -- e.g. backtest.py scanning years of
+    crossovers -- can pass a longer one like "2y".
 
     Returns a tuple (data, failed):
       data   -- { ticker: DataFrame indexed by date, with a 'Close' column }
@@ -191,7 +197,7 @@ def download_prices(tickers: list[str]) -> tuple[dict[str, pd.DataFrame], list[s
             try:
                 raw = yf.download(
                     batch,
-                    period=DOWNLOAD_PERIOD,
+                    period=period,
                     interval="1d",
                     group_by="ticker",
                     auto_adjust=True,   # adjust for splits/dividends
@@ -246,6 +252,19 @@ def _extract_one_ticker(raw: pd.DataFrame, ticker: str) -> pd.DataFrame | None:
 # STEP 3 & 4 -- moving averages + crossover detection
 # ===========================================================================
 
+def compute_sma_spread(close: pd.Series) -> pd.Series:
+    """Return SMA{SHORT_WINDOW} - SMA{LONG_WINDOW} for a closing-price series.
+
+    Positive means the fast average is above the slow one. The first
+    LONG_WINDOW-1 days (not enough history yet to form a full SMA20) are
+    dropped. Shared by find_crossovers() (recent days only) and backtest.py
+    (the entire history), so the two never disagree about what a crossover is.
+    """
+    sma_short = close.rolling(SHORT_WINDOW).mean()
+    sma_long = close.rolling(LONG_WINDOW).mean()
+    return (sma_short - sma_long).dropna()
+
+
 def find_crossovers(data: dict[str, pd.DataFrame]) -> list[dict]:
     """Scan every ticker for SMA5/SMA20 crossovers in the last LOOKBACK_DAYS.
 
@@ -262,11 +281,7 @@ def find_crossovers(data: dict[str, pd.DataFrame]) -> list[dict]:
         if len(close) < LONG_WINDOW + 1:
             continue
 
-        sma_short = close.rolling(SHORT_WINDOW).mean()
-        sma_long = close.rolling(LONG_WINDOW).mean()
-
-        # "spread" is positive when the fast average is above the slow one.
-        spread = (sma_short - sma_long).dropna()
+        spread = compute_sma_spread(close)
         if len(spread) < 2:
             continue
 

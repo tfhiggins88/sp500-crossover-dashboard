@@ -19,6 +19,7 @@ Eastern.
 | File | What it does |
 |------|--------------|
 | `crossover.py` | The whole pipeline: get tickers → download prices → compute SMAs → detect crossovers → build charts → write `docs/index.html`. Heavily commented. |
+| `backtest.py` | Backtests the bullish crossover signal against real history: what holding period would have made money, and did it beat just buying SPY? See [Backtesting](#backtesting) below. |
 | `requirements.txt` | Python dependencies (`yfinance`, `pandas`, `plotly`, `lxml`, `requests`). |
 | `.github/workflows/daily-crossover.yml` | Runs the script daily and pushes the updated page. |
 | `docs/index.html` | The generated dashboard (this is what GitHub Pages serves). |
@@ -96,6 +97,52 @@ Then open `docs/index.html` in a browser.
 
 **Tip:** for a fast first run, set `TICKER_OVERRIDE = ["AAPL", "MSFT", "NVDA", "AMD", "TSLA"]`
 at the top of `crossover.py` so you're not downloading all 500 tickers.
+
+---
+
+## Backtesting
+
+`backtest.py` answers a different question than the dashboard: **if you'd
+traded on this signal in the past, would you have made money, and for how
+long would you need to hold?**
+
+```bash
+python backtest.py
+```
+
+It scans ~100 randomly chosen S&P 500 tickers' full 2-year history (not just
+the last couple of days) for every past bullish crossover, randomly samples
+150 of those events, and for each one checks what a 1/3/5/10/15/20/30/45/60
+trading-day holding period would have returned – both for the stock itself
+and for buying-and-holding **SPY** (the S&P 500 index) over that same window.
+The SPY comparison matters: in a rising market almost any stock bought on
+almost any day shows a positive return eventually, so "was the return
+positive" isn't the interesting question – "did it beat just holding the
+index" is.
+
+Output:
+- a table printed to the terminal (win rate, mean/median return, and
+  beat-SPY rate per holding period);
+- `backtest_results.csv` – every sampled trade, so you can slice it yourself;
+- `backtest_report.html` – the same numbers as a chart.
+
+Config knobs, at the top of `backtest.py`:
+
+| Setting | Default | Meaning |
+|---------|---------|---------|
+| `BACKTEST_PERIOD` | `"2y"` | How much history to scan per ticker. |
+| `TICKER_SAMPLE_SIZE` | `100` | How many tickers to scan (`None` = all ~500, slower). |
+| `N_SAMPLE_TRADES` | `150` | How many crossover events to actually backtest. |
+| `HOLDING_PERIODS` | `[1,3,5,10,15,20,30,45,60]` | Trading-day holding periods to test. |
+| `BENCHMARK_TICKER` | `"SPY"` | What "just holding the index" means here. |
+| `RANDOM_SEED` | `42` | Fixes the random sample so reruns are reproducible; set to `None` for a fresh sample each run. |
+
+**Read the results skeptically.** 150 trades from one 2-year stretch is a
+small, noisy sample, and results will shift if you change the seed, the
+period, or the ticker sample. Rerun it periodically and look for holding
+periods that *consistently* show a decent win rate and beat SPY, not a
+single run's best number – with a coin-flip-odds signal, some holding period
+will always look best by chance alone.
 
 ---
 

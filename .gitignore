@@ -9,6 +9,11 @@ env/
 # so there's no reason to track it in git.
 sp500_cache.json
 
+# backtest.py output - regenerate locally with `python backtest.py` instead
+# of tracking a stale snapshot.
+backtest_results.csv
+backtest_report.html
+
 # OS noise
 .DS_Store
 Thumbs.db
